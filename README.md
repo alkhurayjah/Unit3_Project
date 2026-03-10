@@ -2,7 +2,7 @@
 
 An interactive **Streamlit dashboard** that presents insights from the Jadarat cleaned job-postings dataset (Saudi Arabia, Oct 2022 – Jan 2023).
 
-> **Live Demo:** Deploy on Streamlit Cloud — see [deployment instructions](#streamlit-cloud-deployment) below.
+> **Live Demo:** Deploy on Streamlit Cloud — see [deployment instructions]([#streamlit-cloud-deployment](https://unit3project-qccuprbtdt5pveqdja3h65.streamlit.app/)) below.
 
 ---
 

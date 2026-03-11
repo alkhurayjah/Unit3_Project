@@ -314,6 +314,33 @@ with c4:
     st.plotly_chart(fig, use_container_width=True)
 
 
+# -- Row 3: Jobs by Year -----------------------------------------------
+
+st.markdown("### Available Jobs by Year")
+year_counts = (
+    filtered["year"]
+    .value_counts()
+    .sort_index()
+    .reset_index()
+)
+year_counts.columns = ["Year", "Count"]
+year_counts["Year"] = year_counts["Year"].astype(str)
+fig = px.bar(
+    year_counts,
+    x="Year",
+    y="Count",
+    color="Count",
+    color_continuous_scale=[BRAND_LIGHT, BRAND_DARK],
+    text_auto=True,
+)
+fig.update_layout(
+    showlegend=False,
+    coloraxis_showscale=False,
+    margin=dict(t=20, b=20),
+    height=420,
+)
+st.plotly_chart(fig, use_container_width=True)
+
 # -- Row 4: Jobs by Month & Company Size ------------------------------
 
 c7, c8 = st.columns(2)
@@ -430,6 +457,53 @@ fig.update_layout(
     coloraxis_showscale=True,
 )
 st.plotly_chart(fig, use_container_width=True)
+
+# -- Row 7: Scatter / Regression Plots ---------------------------------
+
+sc1, sc2 = st.columns(2)
+
+with sc1:
+    st.markdown("### Experience vs Salary")
+    fig = px.scatter(
+        filtered,
+        x="exper",
+        y="Salary",
+        trendline="ols",
+        labels={"exper": "Years of Experience", "Salary": "Salary (SAR)"},
+        opacity=0.4,
+        color_discrete_sequence=[BRAND],
+    )
+    fig.update_traces(
+        selector=dict(mode="lines"),
+        line=dict(color="red"),
+    )
+    fig.update_layout(
+        margin=dict(t=20, b=20),
+        height=420,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+with sc2:
+    st.markdown("### Job Title (encoded) vs Salary")
+    # Use the same mean-encoded job_title column from the heatmap dataframe
+    fig = px.scatter(
+        df_hm,
+        x="job_title",
+        y="Salary",
+        trendline="ols",
+        labels={"job_title": "Job Title (Mean-Salary Encoded)", "Salary": "Salary (SAR)"},
+        opacity=0.4,
+        color_discrete_sequence=[BRAND],
+    )
+    fig.update_traces(
+        selector=dict(mode="lines"),
+        line=dict(color="red"),
+    )
+    fig.update_layout(
+        margin=dict(t=20, b=20),
+        height=420,
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 # -- Footer ------------------------------------------------------------
 st.markdown("---")

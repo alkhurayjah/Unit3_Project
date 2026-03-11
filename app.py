@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+import pydeck as pdk
 
 # -- Page configuration ------------------------------------------------
 st.set_page_config(
@@ -264,54 +265,121 @@ with c2:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# -- Row 2: Region Pie & Gender / Contract ----------------------------
+# -- Row 2: Jobs by Region - Interactive Saudi Arabia Map ---------------
 
-c3, c4 = st.columns(2)
+st.markdown("### Jobs by Region")
 
-with c3:
-    st.markdown("### Jobs by Region")
-    region_counts = (
-        filtered["region"]
-        .value_counts()
-        .reset_index()
-    )
-    region_counts.columns = ["Region", "Count"]
-    fig = px.pie(
-        region_counts,
-        names="Region",
-        values="Count",
-        color_discrete_sequence=px.colors.sequential.Purples_r,
-        hole=0.35,
-    )
-    fig.update_traces(textposition="inside", textinfo="percent+label")
-    fig.update_layout(
-        showlegend=False,
-        margin=dict(t=20, b=20),
-        height=420,
-    )
-    st.plotly_chart(fig, use_container_width=True)
+# Coordinates for the 13 Saudi administrative regions
+REGION_COORDS = {
+    "Riyadh":           {"lat": 24.7136, "lon": 46.6753},
+    "Makkah":           {"lat": 21.3891, "lon": 39.8579},
+    "Madinah":          {"lat": 24.5247, "lon": 39.5692},
+    "Eastern":          {"lat": 26.3927, "lon": 49.9777},
+    "Qassim":           {"lat": 26.3260, "lon": 43.9750},
+    "Asir":             {"lat": 18.2164, "lon": 42.5053},
+    "Tabuk":            {"lat": 28.3835, "lon": 36.5662},
+    "Hail":             {"lat": 27.5114, "lon": 41.7208},
+    "Northern Borders": {"lat": 30.9943, "lon": 41.0000},
+    "Jazan":            {"lat": 16.8892, "lon": 42.5611},
+    "Najran":           {"lat": 17.4922, "lon": 44.1277},
+    "Al Baha":          {"lat": 20.0000, "lon": 41.4686},
+    "Al Jouf":          {"lat": 29.8868, "lon": 39.8693},
+}
 
-with c4:
-    st.markdown("### Jobs by Gender and Contract Type")
-    gc = filtered.copy()
-    gc["Gender"] = gc["gender"].map(GENDER_MAP)
-    gc["Contract"] = gc["contract"].map(CONTRACT_MAP)
-    gc_grouped = (
-        gc.groupby(["Contract", "Gender"])
-        .size()
-        .reset_index(name="Count")
+region_counts = (
+    filtered["region"]
+    .value_counts()
+    .reset_index()
+)
+region_counts.columns = ["Region", "Count"]
+
+# Merge with coordinates (skip regions not in the lookup)
+region_counts["lat"] = region_counts["Region"].map(
+    lambda r: REGION_COORDS.get(r, {}).get("lat")
+)
+region_counts["lon"] = region_counts["Region"].map(
+    lambda r: REGION_COORDS.get(r, {}).get("lon")
+)
+region_map_df = region_counts.dropna(subset=["lat", "lon"]).copy()
+
+# Scale radius for the ScatterplotLayer (min 15 000, max 80 000)
+if len(region_map_df) > 0:
+    _min_c = region_map_df["Count"].min()
+    _max_c = region_map_df["Count"].max()
+    if _max_c > _min_c:
+        region_map_df["radius"] = (
+            15_000
+            + (region_map_df["Count"] - _min_c)
+            / (_max_c - _min_c)
+            * 65_000
+        )
+    else:
+        region_map_df["radius"] = 40_000
+
+    # Build pydeck layer
+    scatter_layer = pdk.Layer(
+        "ScatterplotLayer",
+        data=region_map_df,
+        get_position="[lon, lat]",
+        get_radius="radius",
+        get_fill_color=[122, 90, 248, 180],   # BRAND_LIGHT with alpha
+        pickable=True,
+        auto_highlight=True,
     )
-    fig = px.bar(
-        gc_grouped,
-        x="Contract",
-        y="Count",
-        color="Gender",
-        barmode="group",
-        color_discrete_sequence=[BRAND_DARK, BRAND_LIGHT, BRAND],
-        text_auto=True,
+
+    view_state = pdk.ViewState(
+        latitude=23.8,
+        longitude=44.8,
+        zoom=4.8,
+        pitch=0,
     )
-    fig.update_layout(margin=dict(t=20, b=20), height=420)
-    st.plotly_chart(fig, use_container_width=True)
+
+    tooltip = {
+        "html": (
+            "<b style='font-size:14px;'>{Region}</b><br/>"
+            "<span style='font-size:12px;'>Jobs: {Count}</span>"
+        ),
+        "style": {
+            "backgroundColor": BRAND_DARK,
+            "color": "white",
+            "borderRadius": "8px",
+            "padding": "8px 12px",
+        },
+    }
+
+    deck = pdk.Deck(
+        layers=[scatter_layer],
+        initial_view_state=view_state,
+        tooltip=tooltip,
+        map_style="mapbox://styles/mapbox/dark-v10",
+    )
+
+    st.pydeck_chart(deck, use_container_width=True)
+else:
+    st.info("No region coordinate data available for the map.")
+
+# -- Row 3: Gender / Contract ------------------------------------------
+
+st.markdown("### Jobs by Gender and Contract Type")
+gc = filtered.copy()
+gc["Gender"] = gc["gender"].map(GENDER_MAP)
+gc["Contract"] = gc["contract"].map(CONTRACT_MAP)
+gc_grouped = (
+    gc.groupby(["Contract", "Gender"])
+    .size()
+    .reset_index(name="Count")
+)
+fig = px.bar(
+    gc_grouped,
+    x="Contract",
+    y="Count",
+    color="Gender",
+    barmode="group",
+    color_discrete_sequence=[BRAND_DARK, BRAND_LIGHT, BRAND],
+    text_auto=True,
+)
+fig.update_layout(margin=dict(t=20, b=20), height=420)
+st.plotly_chart(fig, use_container_width=True)
 
 
 # -- Row 4: Jobs by Month & Company Size ------------------------------

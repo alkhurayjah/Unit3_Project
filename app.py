@@ -398,6 +398,39 @@ fig.update_traces(textposition="inside", textinfo="percent+label")
 fig.update_layout(margin=dict(t=20, b=20), height=420)
 st.plotly_chart(fig, use_container_width=True)
 
+# -- Row 5: Correlation Heat Map ----------------------------------------
+
+st.markdown("### Correlation Heat Map")
+
+df_hm = filtered.copy()
+
+# Encode categorical features (same approach as the notebook)
+df_hm["job_title"] = df_hm.groupby("job_title")["Salary"].transform("mean")
+df_hm["region"] = df_hm.groupby("region")["Salary"].transform("mean")
+
+size_map = {"SA": 1, "SB": 2, "MA": 3, "MB": 4, "MC": 5, "L": 6, "G": 7, "U": 8}
+df_hm["comp_size"] = df_hm["comp_size"].map(size_map)
+
+features = [
+    "job_title", "region", "comp_size",
+    "exper", "gender", "benefits", "contract", "Salary",
+]
+corr = df_hm[features].corr()
+
+fig = px.imshow(
+    corr,
+    text_auto=".2f",
+    color_continuous_scale=["#f5f0ff", "#e0d4ff", BRAND_LIGHT, BRAND, BRAND_DARK],
+    aspect="auto",
+    labels=dict(color="Correlation"),
+)
+fig.update_layout(
+    margin=dict(t=20, b=20),
+    height=520,
+    coloraxis_showscale=True,
+)
+st.plotly_chart(fig, use_container_width=True)
+
 # -- Footer ------------------------------------------------------------
 st.markdown("---")
 st.markdown(

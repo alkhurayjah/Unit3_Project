@@ -127,7 +127,7 @@ st.markdown(
 )
 st.markdown(
     "<p style='text-align:center; font-size:1.1rem; color:#555;'>"
-    "Interactive exploration of <b>1,400+</b> cleaned Saudi job postings "
+    "Interactive exploration of <b>1,300+</b> cleaned Saudi job postings "
     "from the <b>Jadarat</b> platform (Oct 2022 - Jan 2023) </p>",
     unsafe_allow_html=True,
 )
@@ -170,7 +170,7 @@ with i1:
     st.markdown(
         """
         **Salary**
-        - Average salary is approximately **5,295 SAR**, median is approximately **4,500 SAR**
+        - Average salary is approximately **5,228 SAR**, median is approximately **4,500 SAR**
         - Range: **3,000 -- 35,000 SAR** (after removing the Pilot outlier)
         - 50% of jobs offer 4,500 SAR or less, indicating mostly entry-to-mid-level roles
 
